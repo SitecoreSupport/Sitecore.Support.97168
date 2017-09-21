@@ -1,4 +1,4 @@
-﻿namespace Sitecore.Analytics.Reporting
+﻿namespace Sitecore.Support.Analytics.Reporting
 {
   using System;
   using System.Configuration;
@@ -8,10 +8,10 @@
   using MongoDB.Driver;
 
   using Sitecore.Analytics.Data;
+  using Sitecore.Analytics.Data.DataAccess.MongoDb;
   using Sitecore.Analytics.Reporting.helper;
   using Sitecore.Diagnostics;
-
-
+  using Sitecore.Analytics.Reporting;
 
   public class MongoDbReportDataSource : ReportDataSource
   {
@@ -20,9 +20,9 @@
     private const string FIELD_NAME_TRAFFIC_TYPE = "TrafficType";
 
     /// <summary>
-    /// The database connection.
+    /// The driver to be used for MongoDb connections.
     /// </summary>
-    private readonly MongoDatabase database;
+    private readonly MongoDbDriver driver;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MongoDbReportDataSource"/> class.
@@ -37,11 +37,7 @@
       string connectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
       Assert.IsNotNull(connectionString, "connectionString");
 
-      MongoUrl url = new MongoUrl(connectionString);
-      MongoClient client = new MongoClient(connectionString);
-      MongoServer server = client.GetServer();
-
-      this.database = server.GetDatabase(url.DatabaseName);
+      this.driver = new MongoDbDriver(connectionString);
     }
 
 
@@ -68,7 +64,7 @@
         dataSourceFilter.Inject(query);
       }
 
-      MongoCursor<BsonDocument> result = this.database[collection].Find(query);
+      MongoCursor<BsonDocument> result = this.driver[collection].FindAs<BsonDocument>(query);
 
       //
       // If the ChannelId field is requested, make sure the TrafficType field is included as well.
